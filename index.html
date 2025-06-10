@@ -1,0 +1,543 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Task Manager</title>
+    <!-- Tailwind CSS CDN for styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Custom styles to ensure responsive design and better aesthetics */
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 100vh;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        .container {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 32px;
+            border-radius: 20px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+            width: 100%;
+            max-width: 900px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        input[type="text"],
+        input[type="date"],
+        select {
+            padding: 12px 16px;
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            width: 100%;
+            margin-bottom: 16px;
+            box-sizing: border-box;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            background: rgba(255, 255, 255, 0.8);
+        }
+
+        input:focus,
+        select:focus {
+            outline: none;
+            border-color: #6366f1;
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+            transform: translateY(-1px);
+        }
+
+        button {
+            padding: 12px 24px;
+            border-radius: 12px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            margin-right: 8px;
+            margin-bottom: 8px;
+            border: none;
+            position: relative;
+            overflow: hidden;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            color: white;
+        }
+
+        .btn-secondary {
+            background: linear-gradient(135deg, #6b7280, #4b5563);
+            color: white;
+        }
+
+        .task-item {
+            display: flex;
+            align-items: center;
+            padding: 20px;
+            border: 1px solid #e5e7eb;
+            margin-bottom: 12px;
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 16px;
+            flex-wrap: wrap;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(5px);
+        }
+
+        .task-item:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            border-color: #6366f1;
+        }
+
+        .task-item.completed {
+            background: linear-gradient(135deg, #d1fae5, #a7f3d0);
+            text-decoration: line-through;
+            color: #059669;
+            opacity: 0.8;
+        }
+
+        .task-item.urgent {
+            border-left: 6px solid #ef4444;
+        }
+
+        .task-item.high {
+            border-left: 6px solid #f59e0b;
+        }
+
+        .task-item.medium {
+            border-left: 6px solid #3b82f6;
+        }
+
+        .task-item.low {
+            border-left: 6px solid #10b981;
+        }
+
+        .task-item span {
+            flex-grow: 1;
+            margin-right: 12px;
+            font-size: 1rem;
+            line-height: 1.6;
+            word-break: break-word;
+        }
+
+        .task-actions {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .priority-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-left: 8px;
+        }
+
+        .priority-urgent {
+            background: #fef2f2;
+            color: #dc2626;
+        }
+
+        .priority-high {
+            background: #fffbeb;
+            color: #d97706;
+        }
+
+        .priority-medium {
+            background: #eff6ff;
+            color: #2563eb;
+        }
+
+        .priority-low {
+            background: #f0fdf4;
+            color: #16a34a;
+        }
+
+        .section-card {
+            background: rgba(255, 255, 255, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 16px;
+            padding: 24px;
+            margin-bottom: 24px;
+            backdrop-filter: blur(10px);
+        }
+
+        .message-toast {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            padding: 16px 24px;
+            border-radius: 12px;
+            color: white;
+            font-weight: 600;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+            z-index: 1000;
+            transform: translateX(100%);
+            transition: transform 0.3s ease;
+        }
+
+        .message-toast.show {
+            transform: translateX(0);
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 640px) {
+            .container {
+                padding: 20px;
+                margin: 10px;
+            }
+            
+            .task-item {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            
+            .task-item span {
+                margin-bottom: 12px;
+                margin-right: 0;
+            }
+            
+            .task-actions {
+                width: 100%;
+                justify-content: flex-end;
+            }
+            
+            button {
+                margin-right: 0;
+                margin-bottom: 8px;
+            }
+        }
+
+        h1 {
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            text-align: center;
+            font-size: 2.5rem;
+            font-weight: 800;
+            margin-bottom: 2rem;
+        }
+
+        h2 {
+            color: #374151;
+            font-weight: 700;
+            margin-bottom: 1.5rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>✨ Task Manager</h1>
+
+        <!-- Add New Task Section -->
+        <div class="section-card">
+            <h2 class="text-2xl">Add New Task</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                <div>
+                    <label for="taskName" class="block text-sm font-medium text-gray-700 mb-2">Task Name</label>
+                    <input type="text" id="taskName" placeholder="e.g., Buy groceries">
+                </div>
+                <div>
+                    <label for="dueDate" class="block text-sm font-medium text-gray-700 mb-2">Due Date</label>
+                    <input type="date" id="dueDate">
+                </div>
+                <div>
+                    <label for="taskType" class="block text-sm font-medium text-gray-700 mb-2">Task Type</label>
+                    <input type="text" id="taskType" placeholder="e.g., Home, Work, ProjectX">
+                </div>
+                <div>
+                    <label for="priority" class="block text-sm font-medium text-gray-700 mb-2">Priority</label>
+                    <select id="priority">
+                        <option value="urgent">🔴 Urgent</option>
+                        <option value="high">🟡 High</option>
+                        <option value="medium" selected>🔵 Medium</option>
+                        <option value="low">🟢 Low</option>
+                    </select>
+                </div>
+            </div>
+            <button id="addTaskBtn" class="w-full btn-primary">✅ Add Task</button>
+        </div>
+
+        <!-- Filter & Sort Section -->
+        <div class="section-card">
+            <h2 class="text-2xl">Filter & Sort Tasks</h2>
+            <div class="flex flex-col sm:flex-row items-center justify-between gap-4">
+                <div class="w-full sm:w-1/2">
+                    <label for="filterTasks" class="block text-sm font-medium text-gray-700 mb-2">Filter by Status</label>
+                    <select id="filterTasks" class="w-full">
+                        <option value="all">📋 Show All</option>
+                        <option value="pending">⏳ Pending</option>
+                        <option value="completed">✅ Completed</option>
+                    </select>
+                </div>
+                <div class="w-full sm:w-1/2">
+                    <label for="sortTasks" class="block text-sm font-medium text-gray-700 mb-2">Sort By</label>
+                    <select id="sortTasks" class="w-full">
+                        <option value="dueDate">📅 Due Date</option>
+                        <option value="priority">⚡ Priority</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <!-- Task List Section -->
+        <div class="section-card">
+            <h2 class="text-2xl">Your Tasks</h2>
+            <div id="taskList" class="space-y-4">
+                <p class="text-gray-500 text-center py-8" id="noTasksMessage">
+                    🎯 No tasks yet. Add a new task above to get started!
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Define an array to hold all tasks (stored in memory)
+        let tasks = [];
+
+        // Get references to DOM elements
+        const taskNameInput = document.getElementById('taskName');
+        const dueDateInput = document.getElementById('dueDate');
+        const taskTypeInput = document.getElementById('taskType');
+        const prioritySelect = document.getElementById('priority');
+        const addTaskBtn = document.getElementById('addTaskBtn');
+        const taskListDiv = document.getElementById('taskList');
+        const filterTasksSelect = document.getElementById('filterTasks');
+        const sortTasksSelect = document.getElementById('sortTasks');
+        const noTasksMessage = document.getElementById('noTasksMessage');
+
+        // --- Task Management Functions ---
+
+        /**
+         * Generates a unique ID for a new task.
+         */
+        const generateId = () => {
+            return Date.now().toString() + Math.random().toString(36).substr(2, 9);
+        };
+
+        /**
+         * Adds a new task to the tasks array.
+         */
+        const addTask = () => {
+            const name = taskNameInput.value.trim();
+            const dueDate = dueDateInput.value;
+            const type = taskTypeInput.value.trim();
+            const priority = prioritySelect.value;
+
+            if (name === '') {
+                showUIMessage("Task name cannot be empty!", "error");
+                return;
+            }
+
+            const newTask = {
+                id: generateId(),
+                name,
+                dueDate: dueDate || null,
+                type: type || 'General',
+                priority,
+                completed: false
+            };
+
+            tasks.push(newTask);
+            renderTasks();
+
+            // Clear input fields
+            taskNameInput.value = '';
+            dueDateInput.value = '';
+            taskTypeInput.value = '';
+            prioritySelect.value = 'medium';
+            showUIMessage("Task added successfully! 🎉", "success");
+        };
+
+        /**
+         * Toggles the completion status of a task.
+         */
+        const toggleCompleteTask = (id) => {
+            tasks = tasks.map(task =>
+                task.id === id ? { ...task, completed: !task.completed } : task
+            );
+            renderTasks();
+            showUIMessage("Task status updated! ✨", "info");
+        };
+
+        /**
+         * Deletes a task from the tasks array.
+         */
+        const deleteTask = (id) => {
+            if (confirm("Are you sure you want to delete this task?")) {
+                tasks = tasks.filter(task => task.id !== id);
+                renderTasks();
+                showUIMessage("Task deleted! 🗑️", "info");
+            }
+        };
+
+        /**
+         * Renders the tasks based on current filter and sort settings.
+         */
+        const renderTasks = () => {
+            taskListDiv.innerHTML = '';
+
+            // Filter tasks
+            const filter = filterTasksSelect.value;
+            let filteredTasks = tasks.filter(task => {
+                if (filter === 'completed') return task.completed;
+                if (filter === 'pending') return !task.completed;
+                return true;
+            });
+
+            // Sort tasks
+            const sortBy = sortTasksSelect.value;
+            filteredTasks.sort((a, b) => {
+                if (sortBy === 'dueDate') {
+                    if (!a.dueDate && !b.dueDate) return 0;
+                    if (!a.dueDate) return 1;
+                    if (!b.dueDate) return -1;
+                    return new Date(a.dueDate) - new Date(b.dueDate);
+                } else if (sortBy === 'priority') {
+                    const priorityOrder = { 'urgent': 4, 'high': 3, 'medium': 2, 'low': 1 };
+                    return priorityOrder[b.priority] - priorityOrder[a.priority];
+                }
+                return 0;
+            });
+
+            if (filteredTasks.length === 0) {
+                noTasksMessage.style.display = 'block';
+            } else {
+                noTasksMessage.style.display = 'none';
+                filteredTasks.forEach(task => {
+                    const taskItem = document.createElement('div');
+                    taskItem.className = `task-item ${task.completed ? 'completed' : ''} ${task.priority}`;
+                    taskItem.dataset.id = task.id;
+
+                    const dueDateText = task.dueDate ? `📅 ${formatDate(task.dueDate)}` : '';
+                    const taskTypeText = task.type ? `[${task.type}]` : '';
+                    const priorityIcon = getPriorityIcon(task.priority);
+
+                    taskItem.innerHTML = `
+                        <span class="flex-grow min-w-0 pr-4">
+                            <div class="font-semibold text-lg">${task.name}</div>
+                            <div class="text-sm text-gray-600 mt-1">
+                                ${taskTypeText} ${dueDateText}
+                                <span class="priority-badge priority-${task.priority}">
+                                    ${priorityIcon} ${task.priority}
+                                </span>
+                            </div>
+                        </span>
+                        <div class="task-actions flex items-center flex-wrap gap-2 mt-2 sm:mt-0">
+                            <button class="px-4 py-2 text-sm rounded-lg ${task.completed ? 'bg-yellow-500 hover:bg-yellow-600' : 'bg-green-500 hover:bg-green-600'} text-white toggle-btn transition-all">
+                                ${task.completed ? '↩️ Mark Pending' : '✅ Mark Complete'}
+                            </button>
+                            <button class="px-4 py-2 text-sm bg-red-500 hover:bg-red-600 text-white rounded-lg delete-btn transition-all">
+                                🗑️ Delete
+                            </button>
+                        </div>
+                    `;
+
+                    taskItem.querySelector('.toggle-btn').addEventListener('click', () => toggleCompleteTask(task.id));
+                    taskItem.querySelector('.delete-btn').addEventListener('click', () => deleteTask(task.id));
+
+                    taskListDiv.appendChild(taskItem);
+                });
+            }
+        };
+
+        /**
+         * Formats a date string for display.
+         */
+        const formatDate = (dateString) => {
+            const date = new Date(dateString);
+            return date.toLocaleDateString('en-US', { 
+                month: 'short', 
+                day: 'numeric', 
+                year: 'numeric' 
+            });
+        };
+
+        /**
+         * Gets the appropriate icon for a priority level.
+         */
+        const getPriorityIcon = (priority) => {
+            const icons = {
+                'urgent': '🔴',
+                'high': '🟡',
+                'medium': '🔵',
+                'low': '🟢'
+            };
+            return icons[priority] || '🔵';
+        };
+
+        /**
+         * Displays a temporary message to the user.
+         */
+        const showUIMessage = (message, type) => {
+            const messageDiv = document.createElement('div');
+            messageDiv.textContent = message;
+            messageDiv.className = `message-toast ${
+                type === 'success' ? 'bg-green-500' :
+                type === 'error' ? 'bg-red-500' :
+                'bg-blue-500'
+            }`;
+            
+            document.body.appendChild(messageDiv);
+            
+            // Trigger animation
+            setTimeout(() => messageDiv.classList.add('show'), 100);
+            
+            setTimeout(() => {
+                messageDiv.classList.remove('show');
+                setTimeout(() => messageDiv.remove(), 300);
+            }, 3000);
+        };
+
+        // --- Event Listeners ---
+        addTaskBtn.addEventListener('click', addTask);
+        filterTasksSelect.addEventListener('change', renderTasks);
+        sortTasksSelect.addEventListener('change', renderTasks);
+
+        // Allow Enter key to add task
+        [taskNameInput, taskTypeInput].forEach(input => {
+            input.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') addTask();
+            });
+        });
+
+        // Initialize with some sample tasks
+        tasks = [
+            {
+                id: 'sample1',
+                name: 'Welcome to your Task Manager!',
+                type: 'Tutorial',
+                priority: 'medium',
+                dueDate: null,
+                completed: false
+            },
+            {
+                id: 'sample2',
+                name: 'Try adding your first task above',
+                type: 'Tutorial',
+                priority: 'low',
+                dueDate: null,
+                completed: false
+            }
+        ];
+
+        // Initial render
+        renderTasks();
+    </script>
+</body>
+</html>
