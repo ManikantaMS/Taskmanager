@@ -115,6 +115,99 @@
             backdrop-filter: blur(10px);
         }
 
+        /* Enhanced Toast Notifications */
+        .toast-container {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            z-index: 1000;
+        }
+
+        .toast {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 12px;
+            padding: 1rem 1.5rem;
+            margin-bottom: 0.75rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+            transform: translateX(120%);
+            transition: transform 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+            max-width: 350px;
+            border-left: 4px solid;
+        }
+
+        .toast.success {
+            border-left-color: #10B981;
+        }
+
+        .toast.error {
+            border-left-color: #EF4444;
+        }
+
+        .toast.info {
+            border-left-color: #3B82F6;
+        }
+
+        .toast.show {
+            transform: translateX(0);
+        }
+
+        /* Task Statistics */
+        .stats-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 12px;
+            padding: 1rem;
+            text-align: center;
+            transition: transform 0.2s ease;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-2px);
+        }
+
+        .stat-number {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #4F46E5;
+        }
+
+        /* Keyboard Shortcut Hints */
+        .keyboard-hint {
+            display: inline-flex;
+            align-items: center;
+            padding: 0.25rem 0.5rem;
+            background: rgba(0, 0, 0, 0.05);
+            border-radius: 4px;
+            font-size: 0.75rem;
+            margin-left: 0.5rem;
+        }
+
+        /* Status Indicators */
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 8px;
+        }
+
+        .status-dot.completed {
+            background-color: #10B981;
+        }
+
+        .status-dot.pending {
+            background-color: #F59E0B;
+        }
+
         /* Responsive adjustments */
         @media (max-width: 640px) {
             .container {
@@ -217,6 +310,22 @@
             </div>
         </div>
 
+        <!-- Add Statistics Section -->
+        <div class="stats-container">
+            <div class="stat-card">
+                <div class="stat-number" id="totalTasks">0</div>
+                <div class="text-sm text-gray-600">Total Tasks</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="completedTasks">0</div>
+                <div class="text-sm text-gray-600">Completed</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="urgentTasks">0</div>
+                <div class="text-sm text-gray-600">Urgent</div>
+            </div>
+        </div>
+
         <!-- Task List Section -->
         <div class="section-card">
             <h2 class="text-2xl">Your Tasks</h2>
@@ -227,6 +336,9 @@
             </div>
         </div>
     </div>
+
+    <!-- Toast Container -->
+    <div class="toast-container" id="toastContainer"></div>
 
     <script>
         // Define an array to hold all tasks (stored in memory)
@@ -301,11 +413,30 @@
          * Deletes a task from the tasks array.
          */
         const deleteTask = (id) => {
-            if (confirm("Are you sure you want to delete this task?")) {
+            const task = tasks.find(t => t.id === id);
+            showUIMessage(`Are you sure you want to delete "${task.name}"?`, 'warning');
+            
+            // Create temporary confirm buttons
+            const confirmBtns = document.createElement('div');
+            confirmBtns.className = 'toast confirmation';
+            confirmBtns.innerHTML = `
+                <button class="btn-primary mr-2">Yes, delete</button>
+                <button class="btn-secondary">Cancel</button>
+            `;
+            
+            document.getElementById('toastContainer').appendChild(confirmBtns);
+            
+            // Handle confirmation
+            confirmBtns.querySelector('.btn-primary').onclick = () => {
                 tasks = tasks.filter(task => task.id !== id);
                 renderTasks();
-                showUIMessage("Task deleted! 🗑️", "info");
-            }
+                showUIMessage("Task deleted successfully!", "success");
+                confirmBtns.remove();
+            };
+            
+            confirmBtns.querySelector('.btn-secondary').onclick = () => {
+                confirmBtns.remove();
+            };
         };
 
         /**
@@ -403,27 +534,53 @@
             return icons[priority] || '🔵';
         };
 
-        /**
-         * Displays a temporary message to the user.
-         */
+        // Enhanced showUIMessage function
         const showUIMessage = (message, type) => {
-            const messageDiv = document.createElement('div');
-            messageDiv.textContent = message;
-            messageDiv.className = `message-toast ${
-                type === 'success' ? 'bg-green-500' :
-                type === 'error' ? 'bg-red-500' :
-                'bg-blue-500'
-            }`;
+            const toastContainer = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
             
-            document.body.appendChild(messageDiv);
+            const icon = type === 'success' ? '✅' :
+                        type === 'error' ? '❌' : 'ℹ️';
+            
+            toast.className = `toast ${type}`;
+            toast.innerHTML = `
+                <span class="toast-icon">${icon}</span>
+                <span class="toast-message">${message}</span>
+            `;
+            
+            toastContainer.appendChild(toast);
             
             // Trigger animation
-            setTimeout(() => messageDiv.classList.add('show'), 100);
+            setTimeout(() => toast.classList.add('show'), 10);
             
+            // Remove toast after delay
             setTimeout(() => {
-                messageDiv.classList.remove('show');
-                setTimeout(() => messageDiv.remove(), 300);
+                toast.classList.remove('show');
+                setTimeout(() => toast.remove(), 300);
             }, 3000);
+        };
+
+        // Update statistics
+        const updateStats = () => {
+            document.getElementById('totalTasks').textContent = tasks.length;
+            document.getElementById('completedTasks').textContent = 
+                tasks.filter(task => task.completed).length;
+            document.getElementById('urgentTasks').textContent = 
+                tasks.filter(task => task.priority === 'urgent').length;
+        };
+
+        // Add keyboard shortcuts
+        document.addEventListener('keydown', (e) => {
+            if (e.ctrlKey && e.key === 'Enter') {
+                addTask();
+            }
+        });
+
+        // Enhance renderTasks to update statistics
+        const originalRenderTasks = renderTasks;
+        renderTasks = () => {
+            originalRenderTasks();
+            updateStats();
         };
 
         // --- Event Listeners ---
