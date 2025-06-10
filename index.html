@@ -3,620 +3,982 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Task Manager</title>
+    <title>Kanban Task Manager</title>
     <!-- Tailwind CSS CDN for styling -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        /* Custom styles to ensure responsive design and better aesthetics */
+        /* Import Poppins font for a modern look */
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap');
+
+        /* Apply Poppins font to all elements */
+        * {
+            font-family: 'Poppins', sans-serif;
+        }
+
+        /* Body styling with animated gradient background */
         body {
-            font-family: 'Inter', sans-serif;
-            background: linear-gradient(135deg, #1a1c2c 0%, #4a4e69 100%);
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+            background-size: 400% 400%;
+            animation: gradientShift 15s ease infinite; /* Smooth, endless gradient animation */
             min-height: 100vh;
-            padding: 2rem;
-            box-sizing: border-box;
-            color: #1a1c2c;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start; /* Align to the top for better scroll on smaller screens */
+            box-sizing: border-box; /* Include padding in element's total width and height */
         }
 
+        /* Keyframe animation for background gradient shift */
+        @keyframes gradientShift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        /* Keyframe animation for floating elements */
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+        }
+
+        /* Keyframe animation for pulse effect, used on completed and urgent tasks */
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.03); /* Slight increase for a subtle pulse */ }
+        }
+
+        /* Keyframe animation for shimmer effect on buttons and container */
+        @keyframes shimmer {
+            0% { background-position: -200% center; }
+            100% { background-position: 200% center; }
+        }
+
+        /* Main container styling with glassmorphism and subtle shadow */
         .container {
-            background: rgba(255, 255, 255, 0.85);
-            backdrop-filter: blur(20px);
-            padding: 2.5rem;
-            border-radius: 24px;
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.35);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            max-width: 1000px;
-            margin: 0 auto;
+            background: linear-gradient(145deg, rgba(255, 255, 255, 0.25), rgba(255, 255, 255, 0.1));
+            backdrop-filter: blur(20px); /* Glassmorphism blur effect */
+            border: 1px solid rgba(255, 255, 255, 0.3); /* Translucent border */
+            box-shadow:
+                0 25px 50px -12px rgba(0, 0, 0, 0.25), /* Large shadow for depth */
+                0 0 0 1px rgba(255, 255, 255, 0.2) inset; /* Inner border glow */
+            border-radius: 30px; /* More rounded corners */
+            padding: 40px;
+            width: 100%;
+            max-width: 1200px; /* Wider container for Kanban columns */
+            position: relative;
+            overflow: hidden; /* Hide overflow for shimmer effect */
         }
 
+        /* Shimmer effect for the container's pseudo-element */
+        .container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+            animation: shimmer 3s infinite; /* Continuous shimmer */
+        }
+
+        /* Main title styling with vibrant gradient text and animations */
+        h1 {
+            background: linear-gradient(135deg, #ff6b6b, #4ecdc4, #45b7d1, #f9ca24, #f0932b, #eb4d4b);
+            background-size: 300% 300%;
+            -webkit-background-clip: text; /* Clip background to text shape */
+            -webkit-text-fill-color: transparent; /* Make text transparent to show background */
+            background-clip: text;
+            text-align: center;
+            font-size: 3.5rem;
+            font-weight: 800;
+            margin-bottom: 2rem;
+            animation: gradientShift 8s ease infinite, float 3s ease-in-out infinite; /* Combined animations */
+            text-shadow: 0 0 30px rgba(255, 255, 255, 0.3); /* Soft glow */
+        }
+
+        /* Section headings styling */
+        h2 {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            font-weight: 700;
+            margin-bottom: 1.5rem;
+            font-size: 1.8rem;
+        }
+
+        /* Styling for content sections (Add Task, Filter & Sort, Task List) */
+        .section-card {
+            background: linear-gradient(145deg, rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0.05));
+            backdrop-filter: blur(15px); /* Stronger blur for cards */
+            border: 2px solid;
+            border-image: linear-gradient(135deg, #ff6b6b, #4ecdc4, #45b7d1) 1; /* Gradient border */
+            border-radius: 25px; /* Consistent rounded corners */
+            padding: 30px;
+            margin-bottom: 30px;
+            position: relative;
+            overflow: hidden;
+            transition: all 0.4s ease; /* Smooth transitions for hover effects */
+        }
+
+        /* Hover effect for section cards */
+        .section-card:hover {
+            transform: translateY(-5px); /* Lift effect */
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2); /* Enhanced shadow on hover */
+            border-image: linear-gradient(135deg, #f093fb, #f5576c, #4facfe) 1; /* Border color change on hover */
+        }
+
+        /* Animated border top for section cards */
+        .section-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px; /* Thin line at the top */
+            background: linear-gradient(90deg, #ff6b6b, #4ecdc4, #45b7d1, #f9ca24, #f0932b);
+            background-size: 200% 100%;
+            animation: gradientShift 4s linear infinite; /* Shifting gradient for the top border */
+        }
+
+        /* Styling for text inputs and select dropdowns */
         input[type="text"],
         input[type="date"],
         select {
-            background: rgba(255, 255, 255, 0.9);
-            border: 2px solid #e2e8f0;
-            border-radius: 12px;
-            padding: 0.75rem 1rem;
-            font-size: 0.95rem;
-            transition: all 0.2s ease;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+            padding: 16px 20px;
+            border: 2px solid transparent; /* Transparent border for gradient border */
+            background: linear-gradient(white, white) padding-box,
+                        linear-gradient(135deg, #667eea, #764ba2, #f093fb) border-box; /* Gradient border effect */
+            border-radius: 15px;
+            width: 100%;
+            margin-bottom: 16px;
+            font-size: 16px;
+            font-weight: 500;
+            transition: all 0.3s ease; /* Smooth transitions */
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
         }
 
+        /* Focus state for inputs and selects */
         input:focus,
         select:focus {
-            border-color: #4f46e5;
-            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
-            transform: translateY(-1px);
+            outline: none;
+            transform: translateY(-2px) scale(1.02); /* Slight lift and scale on focus */
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15); /* Enhanced shadow on focus */
+            background: linear-gradient(white, white) padding-box,
+                        linear-gradient(135deg, #ff6b6b, #4ecdc4, #45b7d1) border-box; /* Highlight border on focus */
         }
 
-        button {
-            padding: 12px 24px;
-            border-radius: 12px;
-            cursor: pointer;
+        /* Label styling */
+        label {
             font-weight: 600;
-            transition: all 0.3s ease;
-            margin-right: 8px;
+            color: #2d3748; /* Darker text for labels */
             margin-bottom: 8px;
+            display: block;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        /* Base button styling */
+        button {
+            padding: 16px 28px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-weight: 700;
+            transition: all 0.4s ease; /* Smooth transitions for hover/active */
+            margin-right: 12px;
+            margin-bottom: 12px;
             border: none;
             position: relative;
             overflow: hidden;
-        }
-
-        button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
-        }
-
-        .btn-primary {
-            background: linear-gradient(135deg, #4f46e5, #7c3aed);
-            color: white;
-            font-weight: 600;
-            padding: 0.75rem 1.5rem;
-            border-radius: 12px;
-            transition: all 0.2s ease;
-            border: none;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-        }
-
-        .btn-primary:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 15px rgba(79, 70, 229, 0.2);
-        }
-
-        .task-item {
-            background: rgba(255, 255, 255, 0.95);
-            border-radius: 16px;
-            padding: 1.5rem;
-            margin-bottom: 1rem;
-            border: 1px solid rgba(0, 0, 0, 0.05);
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
-            transition: all 0.2s ease;
-        }
-
-        .task-item:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 15px rgba(0, 0, 0, 0.1);
-        }
-
-        .priority-badge {
-            padding: 0.35rem 1rem;
-            border-radius: 20px;
-            font-size: 0.75rem;
-            font-weight: 600;
+            text-transform: uppercase;
             letter-spacing: 0.5px;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+            font-size: 14px;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2); /* Initial shadow */
         }
 
-        .message-toast {
-            background: rgba(0, 0, 0, 0.8);
+        /* Button hover effects */
+        button:hover {
+            transform: translateY(-3px) scale(1.05); /* Lift and scale effect */
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.3); /* Larger shadow on hover */
+        }
+
+        /* Button active (click) effects */
+        button:active {
+            transform: translateY(-1px) scale(1.02); /* Slight press effect */
+        }
+
+        /* Primary button with gradient background and shimmer effect */
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
             color: white;
-            padding: 1rem 1.5rem;
-            border-radius: 12px;
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
-            backdrop-filter: blur(10px);
+            position: relative;
+            z-index: 1; /* Ensure text is above shimmer */
         }
 
-        /* Enhanced Toast Notifications */
-        .toast-container {
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            z-index: 1000;
+        /* Shimmer effect for primary button */
+        .btn-primary::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%; /* Start off-screen to the left */
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+            transition: left 0.5s;
+            z-index: -1; /* Place behind button text */
         }
 
-        .toast {
-            background: rgba(255, 255, 255, 0.95);
-            border-radius: 12px;
-            padding: 1rem 1.5rem;
-            margin-bottom: 0.75rem;
+        /* Shimmer moves across the button on hover */
+        .btn-primary:hover::before {
+            left: 100%; /* Move across to the right */
+        }
+
+        /* Specific gradient styles for other buttons */
+        .btn-success {
+            background: linear-gradient(135deg, #56ab2f, #a8e6cf);
+            color: white;
+        }
+
+        .btn-warning {
+            background: linear-gradient(135deg, #f093fb, #f5576c);
+            color: white;
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, #ff416c, #ff4b2b);
+            color: white;
+        }
+
+        /* Styling for individual task items */
+        .task-item {
             display: flex;
-            align-items: center;
-            gap: 0.75rem;
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
-            transform: translateX(120%);
-            transition: transform 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
-            max-width: 350px;
-            border-left: 4px solid;
+            flex-direction: column; /* Stack content vertically within task item */
+            align-items: flex-start;
+            padding: 15px 20px;
+            margin-bottom: 15px;
+            background: linear-gradient(145deg, rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0.7));
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            transition: all 0.4s ease;
+            border: 2px solid transparent; /* Placeholder for priority borders */
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
         }
 
-        .toast.success {
-            border-left-color: #10B981;
+        /* Overlay effect for task items on hover */
+        .task-item::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 100%;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            border-radius: 20px;
         }
 
-        .toast.error {
-            border-left-color: #EF4444;
+        /* Hover effect for task items */
+        .task-item:hover {
+            transform: translateY(-5px) scale(1.01);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
         }
 
-        .toast.info {
-            border-left-color: #3B82F6;
+        /* Hover background for task items */
+        .task-item:hover::before {
+            opacity: 0.1;
         }
 
-        .toast.show {
-            transform: translateX(0);
+        /* Styling for completed tasks */
+        .task-item.completed {
+            background: linear-gradient(145deg, #d4edda, #c3e6cb); /* Light green for completed */
+            color: #155724; /* Darker green text */
+            text-decoration: line-through; /* Strikethrough for completed tasks */
+            animation: pulse 2s infinite; /* Gentle pulse for completed tasks */
         }
 
-        /* Task Statistics */
-        .stats-container {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-            gap: 1rem;
-            margin-bottom: 2rem;
+        /* Border effect for completed tasks */
+        .task-item.completed::before {
+            background: linear-gradient(135deg, #28a745, #20c997);
         }
 
-        .stat-card {
-            background: rgba(255, 255, 255, 0.9);
-            border-radius: 12px;
-            padding: 1rem;
+        /* Dynamic borders for tasks based on priority */
+        .task-item.urgent {
+            border-image: linear-gradient(135deg, #ff416c, #ff4b2b) 1; /* Red/Orange gradient */
+            border-width: 3px;
+            border-style: solid;
+        }
+        .task-item.urgent::before { background: linear-gradient(135deg, #ff416c, #ff4b2b); }
+
+        .task-item.high {
+            border-image: linear-gradient(135deg, #f093fb, #f5576c) 1; /* Pink/Red gradient */
+            border-width: 3px;
+            border-style: solid;
+        }
+        .task-item.high::before { background: linear-gradient(135deg, #f093fb, #f5576c); }
+
+        .task-item.medium {
+            border-image: linear-gradient(135deg, #667eea, #764ba2) 1; /* Blue/Purple gradient */
+            border-width: 3px;
+            border-style: solid;
+        }
+        .task-item.medium::before { background: linear-gradient(135deg, #667eea, #764ba2); }
+
+        .task-item.low {
+            border-image: linear-gradient(135deg, #56ab2f, #a8e6cf) 1; /* Green gradient */
+            border-width: 3px;
+            border-style: solid;
+        }
+        .task-item.low::before { background: linear-gradient(135deg, #56ab2f, #a8e6cf); }
+
+        /* Task item content layout */
+        .task-item > div {
+            width: 100%; /* Ensure content div takes full width */
+        }
+
+        /* Task name styling */
+        .task-name {
+            font-weight: 700;
+            font-size: 1.1rem;
+            margin-bottom: 5px;
+            background: linear-gradient(135deg, #2d3748, #4a5568); /* Dark gradient for task name */
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        /* Task details (type, due date) styling */
+        .task-details {
+            font-size: 0.85rem;
+            color: #4a5568;
+            font-weight: 500;
+            margin-bottom: 10px;
+        }
+
+        /* Task action buttons container */
+        .task-actions {
+            display: flex;
+            gap: 8px; /* Smaller gap for buttons */
+            flex-wrap: wrap;
+            position: relative;
+            z-index: 1;
+            margin-top: 10px; /* Space between details and buttons */
+        }
+
+        /* Priority badge styling */
+        .priority-badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 0.7rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-left: 8px; /* Smaller margin-left */
+            color: white;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+        }
+
+        /* Priority badge specific colors */
+        .priority-urgent { background: linear-gradient(135deg, #ff416c, #ff4b2b); animation: pulse 1.5s infinite; }
+        .priority-high { background: linear-gradient(135deg, #f093fb, #f5576c); }
+        .priority-medium { background: linear-gradient(135deg, #667eea, #764ba2); }
+        .priority-low { background: linear-gradient(135deg, #56ab2f, #a8e6cf); }
+
+        /* Custom message toast for user feedback */
+        .message-toast {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            padding: 20px 30px;
+            border-radius: 20px;
+            color: white;
+            font-weight: 700;
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.3);
+            z-index: 1000;
+            transform: translateX(120%) rotate(10deg); /* Start off-screen, rotated */
+            transition: all 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55); /* Bounce transition */
+            font-size: 1rem;
+            min-width: 200px;
             text-align: center;
-            transition: transform 0.2s ease;
         }
 
-        .stat-card:hover {
-            transform: translateY(-2px);
+        /* Show state for message toast */
+        .message-toast.show {
+            transform: translateX(0) rotate(0deg);
         }
 
-        .stat-number {
+        /* Message toast specific colors */
+        .message-success { background: linear-gradient(135deg, #56ab2f, #a8e6cf); }
+        .message-error { background: linear-gradient(135deg, #ff416c, #ff4b2b); }
+        .message-info { background: linear-gradient(135deg, #667eea, #764ba2); }
+
+        /* Floating background shapes for visual flair */
+        .floating-shapes {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none; /* Do not interfere with clicks */
+            z-index: -1; /* Behind all content */
+        }
+
+        .shape {
+            position: absolute;
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.05));
+            border-radius: 50%; /* Circular shapes */
+            animation: float 6s ease-in-out infinite; /* Floating animation */
+        }
+        /* Individual sizes and positions for shapes */
+        .shape:nth-child(1) { width: 80px; height: 80px; top: 10%; left: 10%; animation-delay: 0s; }
+        .shape:nth-child(2) { width: 120px; height: 120px; top: 70%; left: 80%; animation-delay: 2s; }
+        .shape:nth-child(3) { width: 60px; height: 60px; top: 40%; left: 5%; animation-delay: 4s; }
+        .shape:nth-child(4) { width: 100px; height: 100px; top: 20%; left: 85%; animation-delay: 1s; }
+
+        /* Styling for the "No tasks yet" message */
+        .no-tasks-message {
+            text-align: center;
+            padding: 60px 20px;
+            background: linear-gradient(145deg, rgba(255, 255, 255, 0.3), rgba(255, 255, 255, 0.1));
+            border-radius: 20px;
+            border: 2px dashed;
+            border-image: linear-gradient(135deg, #667eea, #764ba2, #f093fb) 1; /* Dashed gradient border */
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: #4a5568;
+            grid-column: span 3; /* Span across all columns in Kanban view */
+        }
+
+        /* Stats card styling */
+        .stats-card {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            padding: 20px;
+            border-radius: 20px;
+            text-align: center;
+            margin-bottom: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .stats-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.3);
+        }
+
+        .stats-number {
+            font-size: 2.5rem;
+            font-weight: 800;
+            margin-bottom: 5px;
+        }
+
+        .stats-label {
+            font-size: 0.9rem;
+            opacity: 0.9;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        /* Kanban Board Styles */
+        .kanban-board {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap; /* Allow columns to wrap on smaller screens */
+            align-items: flex-start; /* Align columns to the top */
+        }
+
+        .kanban-column {
+            flex: 1; /* Distribute space equally */
+            min-width: 280px; /* Minimum width for columns */
+            background: linear-gradient(145deg, rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0.05));
+            backdrop-filter: blur(15px);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 25px;
+            padding: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+            transition: all 0.3s ease;
+        }
+
+        .kanban-column h3 {
             font-size: 1.5rem;
             font-weight: 700;
-            color: #4F46E5;
+            margin-bottom: 20px;
+            text-align: center;
+            background: linear-gradient(135deg, #4ecdc4, #45b7d1);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            text-shadow: 0 0 10px rgba(255, 255, 255, 0.1);
         }
 
-        /* Keyboard Shortcut Hints */
-        .keyboard-hint {
-            display: inline-flex;
+        /* Custom Modal Styles (for confirmation) */
+        .modal {
+            display: none; /* Hidden by default */
+            position: fixed; /* Stay in place */
+            z-index: 1001; /* Sit on top */
+            left: 0;
+            top: 0;
+            width: 100%; /* Full width */
+            height: 100%; /* Full height */
+            overflow: auto; /* Enable scroll if needed */
+            background-color: rgba(0,0,0,0.6); /* Black w/ opacity */
+            justify-content: center;
             align-items: center;
-            padding: 0.25rem 0.5rem;
-            background: rgba(0, 0, 0, 0.05);
-            border-radius: 4px;
-            font-size: 0.75rem;
-            margin-left: 0.5rem;
         }
 
-        /* Status Indicators */
-        .status-dot {
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            display: inline-block;
-            margin-right: 8px;
+        .modal-content {
+            background: linear-gradient(145deg, rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0.7));
+            backdrop-filter: blur(15px);
+            margin: auto;
+            padding: 30px;
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            width: 90%;
+            max-width: 400px;
+            text-align: center;
+            box-shadow: 0 15px 50px rgba(0, 0, 0, 0.3);
+            animation: fadeIn 0.3s ease-out;
         }
 
-        .status-dot.completed {
-            background-color: #10B981;
+        .modal-content p {
+            margin-bottom: 25px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #2d3748;
         }
 
-        .status-dot.pending {
-            background-color: #F59E0B;
+        .modal-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
         }
 
-        /* Responsive adjustments */
-        @media (max-width: 640px) {
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Responsive adjustments for smaller screens */
+        @media (max-width: 768px) {
             .container {
-                padding: 20px;
+                padding: 25px;
                 margin: 10px;
+                border-radius: 20px;
             }
-            
+
+            h1 {
+                font-size: 2.5rem;
+            }
+
+            .kanban-board {
+                flex-direction: column; /* Stack columns vertically */
+                align-items: center;
+            }
+
+            .kanban-column {
+                min-width: 90%; /* Take more width on small screens */
+                margin-bottom: 20px; /* Space between stacked columns */
+            }
+
             .task-item {
-                flex-direction: column;
-                align-items: flex-start;
+                padding: 15px;
             }
-            
+
             .task-item span {
-                margin-bottom: 12px;
+                margin-bottom: 10px;
                 margin-right: 0;
             }
-            
+
             .task-actions {
                 width: 100%;
-                justify-content: flex-end;
+                justify-content: center; /* Center buttons on small screens */
             }
-            
+
             button {
-                margin-right: 0;
+                margin-right: 8px;
                 margin-bottom: 8px;
+                padding: 12px 20px;
             }
-        }
 
-        h1 {
-            font-size: 2.75rem;
-            background: linear-gradient(135deg, #4f46e5, #7c3aed);
-            -webkit-background-clip: text;
-            background-clip: text;
-            -webkit-text-fill-color: transparent;
-            margin-bottom: 2.5rem;
-            text-align: center;
-            font-weight: 800;
-            letter-spacing: -0.5px;
-        }
+            .section-card {
+                padding: 20px;
+            }
 
-        h2 {
-            color: #374151;
-            font-weight: 700;
-            margin-bottom: 1.5rem;
+            .message-toast {
+                bottom: 20px;
+                right: 20px;
+                padding: 15px 25px;
+                font-size: 0.9rem;
+            }
         }
     </style>
 </head>
 <body>
+    <!-- Floating Background Shapes for aesthetic appeal -->
+    <div class="floating-shapes">
+        <div class="shape"></div>
+        <div class="shape"></div>
+        <div class="shape"></div>
+        <div class="shape"></div>
+    </div>
+
     <div class="container">
-        <h1>✨ Task Manager</h1>
+        <h1>Kanban Task Board</h1>
 
-        <!-- Add New Task Section -->
+        <!-- Task Statistics Section -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <div class="stats-card">
+                <div id="total-tasks-count" class="stats-number">0</div>
+                <div class="stats-label">Total Tasks</div>
+            </div>
+            <div class="stats-card">
+                <div id="active-tasks-count" class="stats-number">0</div>
+                <div class="stats-label">Active Tasks</div>
+            </div>
+            <div class="stats-card">
+                <div id="completed-tasks-count" class="stats-number">0</div>
+                <div class="stats-label">Completed Tasks</div>
+            </div>
+        </div>
+
+        <!-- Add Task Section -->
         <div class="section-card">
-            <h2 class="text-2xl">Add New Task</h2>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+            <h2>Add New Task</h2>
+            <form id="task-form" class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                    <label for="taskName" class="block text-sm font-medium text-gray-700 mb-2">Task Name</label>
-                    <input type="text" id="taskName" placeholder="e.g., Buy groceries">
+                    <label for="task-name">Task Name</label>
+                    <input type="text" id="task-name" placeholder="e.g., Finish project report" required>
                 </div>
                 <div>
-                    <label for="dueDate" class="block text-sm font-medium text-gray-700 mb-2">Due Date</label>
-                    <input type="date" id="dueDate">
+                    <label for="task-type">Task Type</label>
+                    <input type="text" id="task-type" placeholder="e.g., Work, Personal, Study">
                 </div>
                 <div>
-                    <label for="taskType" class="block text-sm font-medium text-gray-700 mb-2">Task Type</label>
-                    <input type="text" id="taskType" placeholder="e.g., Home, Work, ProjectX">
+                    <label for="due-date">Due Date</label>
+                    <input type="date" id="due-date">
                 </div>
                 <div>
-                    <label for="priority" class="block text-sm font-medium text-gray-700 mb-2">Priority</label>
+                    <label for="priority">Priority</label>
                     <select id="priority">
-                        <option value="urgent">🔴 Urgent</option>
-                        <option value="high">🟡 High</option>
-                        <option value="medium" selected>🔵 Medium</option>
-                        <option value="low">🟢 Low</option>
+                        <option value="low">Low</option>
+                        <option value="medium" selected>Medium</option>
+                        <option value="high">High</option>
+                        <option value="urgent">Urgent</option>
                     </select>
                 </div>
-            </div>
-            <button id="addTaskBtn" class="w-full btn-primary">✅ Add Task</button>
+                <div class="md:col-span-2 flex justify-end">
+                    <button type="submit" class="btn-primary">Add Task</button>
+                    <button type="button" id="cancel-edit-btn" class="btn-warning hidden">Cancel Edit</button>
+                </div>
+            </form>
         </div>
 
-        <!-- Filter & Sort Section -->
+        <!-- Filter & Sort Section - Retained but may apply across columns or within them -->
         <div class="section-card">
-            <h2 class="text-2xl">Filter & Sort Tasks</h2>
-            <div class="flex flex-col sm:flex-row items-center justify-between gap-4">
-                <div class="w-full sm:w-1/2">
-                    <label for="filterTasks" class="block text-sm font-medium text-gray-700 mb-2">Filter by Status</label>
-                    <select id="filterTasks" class="w-full">
-                        <option value="all">📋 Show All</option>
-                        <option value="pending">⏳ Pending</option>
-                        <option value="completed">✅ Completed</option>
+            <h2>Filter & Sort Tasks</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label for="filter-status">Filter by Status (Applies to all columns)</label>
+                    <select id="filter-status">
+                        <option value="all">All</option>
+                        <option value="todo">To Do</option>
+                        <option value="in-progress">In Progress</option>
+                        <option value="completed">Completed</option>
                     </select>
                 </div>
-                <div class="w-full sm:w-1/2">
-                    <label for="sortTasks" class="block text-sm font-medium text-gray-700 mb-2">Sort By</label>
-                    <select id="sortTasks" class="w-full">
-                        <option value="dueDate">📅 Due Date</option>
-                        <option value="priority">⚡ Priority</option>
+                <div>
+                    <label for="sort-by">Sort By (Applies within columns)</label>
+                    <select id="sort-by">
+                        <option value="priority">Priority (Urgent first)</option>
+                        <option value="dueDate">Due Date (Soonest first)</option>
                     </select>
                 </div>
             </div>
         </div>
 
-        <!-- Add Statistics Section -->
-        <div class="stats-container">
-            <div class="stat-card">
-                <div class="stat-number" id="totalTasks">0</div>
-                <div class="text-sm text-gray-600">Total Tasks</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-number" id="completedTasks">0</div>
-                <div class="text-sm text-gray-600">Completed</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-number" id="urgentTasks">0</div>
-                <div class="text-sm text-gray-600">Urgent</div>
-            </div>
-        </div>
-
-        <!-- Task List Section -->
+        <!-- Kanban Board Section -->
         <div class="section-card">
-            <h2 class="text-2xl">Your Tasks</h2>
-            <div id="taskList" class="space-y-4">
-                <p class="text-gray-500 text-center py-8" id="noTasksMessage">
-                    🎯 No tasks yet. Add a new task above to get started!
-                </p>
+            <h2>Your Kanban Board</h2>
+            <div class="kanban-board">
+                <!-- To Do Column -->
+                <div class="kanban-column" id="column-todo">
+                    <h3>To Do</h3>
+                    <!-- Tasks with status 'todo' will be rendered here -->
+                </div>
+
+                <!-- In Progress Column -->
+                <div class="kanban-column" id="column-in-progress">
+                    <h3>In Progress</h3>
+                    <!-- Tasks with status 'in-progress' will be rendered here -->
+                </div>
+
+                <!-- Completed Column -->
+                <div class="kanban-column" id="column-completed">
+                    <h3>Completed</h3>
+                    <!-- Tasks with status 'completed' will be rendered here -->
+                </div>
+                <!-- Message if no tasks exist or no tasks match filters -->
+                <p class="no-tasks-message hidden" id="no-tasks-message">No tasks yet. Add one above!</p>
             </div>
         </div>
     </div>
 
-    <!-- Toast Container -->
-    <div class="toast-container" id="toastContainer"></div>
+    <!-- Custom Message Toast -->
+    <div id="message-toast" class="message-toast"></div>
+
+    <!-- Custom Confirmation Modal -->
+    <div id="confirmation-modal" class="modal">
+        <div class="modal-content">
+            <p id="modal-message">Are you sure?</p>
+            <div class="modal-buttons">
+                <button id="modal-confirm-btn" class="btn-danger">Yes</button>
+                <button id="modal-cancel-btn" class="btn-primary">No</button>
+            </div>
+        </div>
+    </div>
 
     <script>
-        // Define an array to hold all tasks (stored in memory)
+        // Array to store tasks
+        // Added 'status' property for Kanban board functionality
         let tasks = [];
+        // Variable to hold the ID of the task being edited
+        let editingTaskId = null;
 
-        // Get references to DOM elements
-        const taskNameInput = document.getElementById('taskName');
-        const dueDateInput = document.getElementById('dueDate');
-        const taskTypeInput = document.getElementById('taskType');
+        // Get DOM elements
+        const taskForm = document.getElementById('task-form');
+        const taskNameInput = document.getElementById('task-name');
+        const taskTypeInput = document.getElementById('task-type');
+        const dueDateInput = document.getElementById('due-date');
         const prioritySelect = document.getElementById('priority');
-        const addTaskBtn = document.getElementById('addTaskBtn');
-        const taskListDiv = document.getElementById('taskList');
-        const filterTasksSelect = document.getElementById('filterTasks');
-        const sortTasksSelect = document.getElementById('sortTasks');
-        const noTasksMessage = document.getElementById('noTasksMessage');
+        const filterStatusSelect = document.getElementById('filter-status');
+        const sortBySelect = document.getElementById('sort-by');
+        const totalTasksCount = document.getElementById('total-tasks-count');
+        const activeTasksCount = document.getElementById('active-tasks-count');
+        const completedTasksCount = document.getElementById('completed-tasks-count');
+        const messageToast = document.getElementById('message-toast');
+        const addTaskButton = taskForm.querySelector('button[type="submit"]');
+        const cancelEditButton = document.getElementById('cancel-edit-btn');
+        const noTasksMessage = document.getElementById('no-tasks-message');
 
-        // --- Task Management Functions ---
+        // Kanban Columns
+        const columnToDo = document.getElementById('column-todo');
+        const columnInProgress = document.getElementById('column-in-progress');
+        const columnCompleted = document.getElementById('column-completed');
+
+        // Modal elements
+        const confirmationModal = document.getElementById('confirmation-modal');
+        const modalMessage = document.getElementById('modal-message');
+        const modalConfirmBtn = document.getElementById('modal-confirm-btn');
+        const modalCancelBtn = document.getElementById('modal-cancel-btn');
+        let modalCallback = null; // Stores the function to call on confirmation
 
         /**
-         * Generates a unique ID for a new task.
+         * Generates a unique ID for tasks.
+         * @returns {string} A unique ID.
          */
-        const generateId = () => {
-            return Date.now().toString() + Math.random().toString(36).substr(2, 9);
-        };
+        function generateId() {
+            return Date.now().toString(36) + Math.random().toString(36).substring(2, 9);
+        }
 
         /**
-         * Adds a new task to the tasks array.
+         * Saves tasks to local storage.
          */
-        const addTask = () => {
-            const name = taskNameInput.value.trim();
-            const dueDate = dueDateInput.value;
-            const type = taskTypeInput.value.trim();
-            const priority = prioritySelect.value;
+        function saveTasks() {
+            try {
+                localStorage.setItem('tasks', JSON.stringify(tasks));
+            } catch (e) {
+                console.error("Error saving tasks to local storage:", e);
+                showMessage('Error saving tasks.', 'error');
+            }
+        }
 
-            if (name === '') {
-                showUIMessage("Task name cannot be empty!", "error");
-                return;
+        /**
+         * Loads tasks from local storage.
+         */
+        function loadTasks() {
+            try {
+                const storedTasks = localStorage.getItem('tasks');
+                tasks = storedTasks ? JSON.parse(storedTasks) : [];
+                // Ensure unique IDs for older tasks if not present and default status
+                tasks = tasks.map(task => ({
+                    ...task,
+                    id: task.id || generateId(),
+                    status: task.status || (task.completed ? 'completed' : 'todo') // Assign initial status
+                }));
+            } catch (e) {
+                console.error("Error loading tasks from local storage:", e);
+                showMessage('Error loading tasks.', 'error');
+                tasks = []; // Reset tasks if loading fails
+            }
+        }
+
+        /**
+         * Displays a custom toast message.
+         * @param {string} message - The message to display.
+         * @param {string} type - The type of message (success, error, info).
+         */
+        function showMessage(message, type = 'info') {
+            messageToast.textContent = message;
+            messageToast.className = `message-toast show message-${type}`; // Apply type class
+            setTimeout(() => {
+                messageToast.classList.remove('show');
+            }, 3000); // Hide after 3 seconds
+        }
+
+        /**
+         * Shows a custom confirmation modal.
+         * @param {string} message - The message to display in the modal.
+         * @param {function} onConfirm - Callback function if confirmed.
+         * @param {function} onCancel - Callback function if cancelled.
+         */
+        function showConfirmationModal(message, onConfirm, onCancel) {
+            modalMessage.textContent = message;
+            confirmationModal.style.display = 'flex';
+            modalCallback = { onConfirm, onCancel };
+        }
+
+        // Event listeners for modal buttons
+        modalConfirmBtn.addEventListener('click', () => {
+            confirmationModal.style.display = 'none';
+            if (modalCallback && modalCallback.onConfirm) {
+                modalCallback.onConfirm();
+            }
+            modalCallback = null;
+        });
+
+        modalCancelBtn.addEventListener('click', () => {
+            confirmationModal.style.display = 'none';
+            if (modalCallback && modalCallback.onCancel) {
+                modalCallback.onCancel();
+            }
+            modalCallback = null;
+        });
+
+        /**
+         * Updates the task statistics (total, active, completed).
+         */
+        function updateStats() {
+            const total = tasks.length;
+            const completed = tasks.filter(task => task.status === 'completed').length;
+            const active = total - completed; // Active tasks are 'todo' and 'in-progress'
+
+            totalTasksCount.textContent = total;
+            activeTasksCount.textContent = active;
+            completedTasksCount.textContent = completed;
+
+            // Show/hide "No tasks yet" message based on total tasks after all filtering/rendering
+            if (total === 0) {
+                noTasksMessage.classList.remove('hidden');
+                noTasksMessage.textContent = 'No tasks yet. Add one above!';
+            } else {
+                noTasksMessage.classList.add('hidden');
+            }
+        }
+
+        /**
+         * Renders the list of tasks into their respective Kanban columns.
+         */
+        function renderTasks() {
+            // Clear all columns
+            columnToDo.innerHTML = '<h3>To Do</h3>';
+            columnInProgress.innerHTML = '<h3>In Progress</h3>';
+            columnCompleted.innerHTML = '<h3>Completed</h3>';
+
+            let filteredTasks = [...tasks]; // Create a shallow copy for filtering/sorting
+
+            // Apply global filter by status
+            const filterStatus = filterStatusSelect.value;
+            if (filterStatus !== 'all') {
+                filteredTasks = filteredTasks.filter(task => task.status === filterStatus);
             }
 
-            const newTask = {
-                id: generateId(),
-                name,
-                dueDate: dueDate || null,
-                type: type || 'General',
-                priority,
-                completed: false
-            };
+            // Apply sort (within each column implicitly, as we iterate and append)
+            const sortBy = sortBySelect.value;
+            const priorityOrder = { 'urgent': 4, 'high': 3, 'medium': 2, 'low': 1 };
 
-            tasks.push(newTask);
-            renderTasks();
-
-            // Clear input fields
-            taskNameInput.value = '';
-            dueDateInput.value = '';
-            taskTypeInput.value = '';
-            prioritySelect.value = 'medium';
-            showUIMessage("Task added successfully! 🎉", "success");
-        };
-
-        /**
-         * Toggles the completion status of a task.
-         */
-        const toggleCompleteTask = (id) => {
-            tasks = tasks.map(task =>
-                task.id === id ? { ...task, completed: !task.completed } : task
-            );
-            renderTasks();
-            showUIMessage("Task status updated! ✨", "info");
-        };
-
-        /**
-         * Deletes a task from the tasks array.
-         */
-        const deleteTask = (id) => {
-            const task = tasks.find(t => t.id === id);
-            showUIMessage(`Are you sure you want to delete "${task.name}"?`, 'warning');
-            
-            // Create temporary confirm buttons
-            const confirmBtns = document.createElement('div');
-            confirmBtns.className = 'toast confirmation';
-            confirmBtns.innerHTML = `
-                <button class="btn-primary mr-2">Yes, delete</button>
-                <button class="btn-secondary">Cancel</button>
-            `;
-            
-            document.getElementById('toastContainer').appendChild(confirmBtns);
-            
-            // Handle confirmation
-            confirmBtns.querySelector('.btn-primary').onclick = () => {
-                tasks = tasks.filter(task => task.id !== id);
-                renderTasks();
-                showUIMessage("Task deleted successfully!", "success");
-                confirmBtns.remove();
-            };
-            
-            confirmBtns.querySelector('.btn-secondary').onclick = () => {
-                confirmBtns.remove();
-            };
-        };
-
-        /**
-         * Renders the tasks based on current filter and sort settings.
-         */
-        const renderTasks = () => {
-            taskListDiv.innerHTML = '';
-
-            // Filter tasks
-            const filter = filterTasksSelect.value;
-            let filteredTasks = tasks.filter(task => {
-                if (filter === 'completed') return task.completed;
-                if (filter === 'pending') return !task.completed;
-                return true;
-            });
-
-            // Sort tasks
-            const sortBy = sortTasksSelect.value;
             filteredTasks.sort((a, b) => {
-                if (sortBy === 'dueDate') {
+                if (sortBy === 'priority') {
+                    return priorityOrder[b.priority] - priorityOrder[a.priority];
+                } else if (sortBy === 'dueDate') {
+                    // Sort by due date, placing tasks without a due date at the end
                     if (!a.dueDate && !b.dueDate) return 0;
                     if (!a.dueDate) return 1;
                     if (!b.dueDate) return -1;
                     return new Date(a.dueDate) - new Date(b.dueDate);
-                } else if (sortBy === 'priority') {
-                    const priorityOrder = { 'urgent': 4, 'high': 3, 'medium': 2, 'low': 1 };
-                    return priorityOrder[b.priority] - priorityOrder[a.priority];
                 }
-                return 0;
+                return 0; // Default no sort
             });
 
-            if (filteredTasks.length === 0) {
-                noTasksMessage.style.display = 'block';
-            } else {
-                noTasksMessage.style.display = 'none';
-                filteredTasks.forEach(task => {
-                    const taskItem = document.createElement('div');
-                    taskItem.className = `task-item ${task.completed ? 'completed' : ''} ${task.priority}`;
-                    taskItem.dataset.id = task.id;
+            let tasksRenderedCount = 0; // Track how many tasks are rendered after filters
 
-                    const dueDateText = task.dueDate ? `📅 ${formatDate(task.dueDate)}` : '';
-                    const taskTypeText = task.type ? `[${task.type}]` : '';
-                    const priorityIcon = getPriorityIcon(task.priority);
+            filteredTasks.forEach(task => {
+                const taskItem = document.createElement('div');
+                taskItem.classList.add('task-item', 'relative', 'overflow-hidden');
+                taskItem.dataset.id = task.id; // Store task ID on the element
+                taskItem.dataset.status = task.status; // Store task status on the element
 
-                    taskItem.innerHTML = `
-                        <span class="flex-grow min-w-0 pr-4">
-                            <div class="font-semibold text-lg">${task.name}</div>
-                            <div class="text-sm text-gray-600 mt-1">
-                                ${taskTypeText} ${dueDateText}
-                                <span class="priority-badge priority-${task.priority}">
-                                    ${priorityIcon} ${task.priority}
-                                </span>
+                // Add priority class for border styling
+                taskItem.classList.add(task.priority);
+
+                // Add 'completed' class for visual strikethrough/pulse if task is in completed status
+                if (task.status === 'completed') {
+                    taskItem.classList.add('completed');
+                }
+
+                        let actionButtonsHTML = '';
+                        if (task.status === 'todo') {
+                            actionButtonsHTML = `
+                                <button class="btn-success move-task-btn" data-id="${task.id}" data-target-status="in-progress">Start Task</button>
+                                <button class="btn-warning edit-btn" data-id="${task.id}">Edit</button>
+                                <button class="btn-danger delete-btn" data-id="${task.id}">Delete</button>
+                            `;
+                        } else if (task.status === 'in-progress') {
+                            actionButtonsHTML = `
+                                <button class="btn-success move-task-btn" data-id="${task.id}" data-target-status="completed">Mark Complete</button>
+                                <button class="btn-primary move-task-btn" data-id="${task.id}" data-target-status="todo">Back to To Do</button>
+                                <button class="btn-warning edit-btn" data-id="${task.id}">Edit</button>
+                                <button class="btn-danger delete-btn" data-id="${task.id}">Delete</button>
+                            `;
+                        } else if (task.status === 'completed') {
+                            actionButtonsHTML = `
+                                <button class="btn-primary move-task-btn" data-id="${task.id}" data-target-status="in-progress">Revert to In Progress</button>
+                                <button class="btn-warning edit-btn" data-id="${task.id}">Edit</button>
+                                <button class="btn-danger delete-btn" data-id="${task.id}">Delete</button>
+                            `;
+                        }
+        
+                        taskItem.innerHTML = `
+                            <div>
+                                <span class="task-name">${task.name}</span>
+                                <span class="priority-badge priority-${task.priority}">${task.priority.charAt(0).toUpperCase() + task.priority.slice(1)}</span>
+                                <div class="task-details">
+                                    ${task.type ? `<span>Type: ${task.type}</span><br>` : ''}
+                                    ${task.dueDate ? `<span>Due: ${task.dueDate}</span>` : ''}
+                                </div>
+                                <div class="task-actions">
+                                    ${actionButtonsHTML}
+                                </div>
                             </div>
-                        </span>
-                        <div class="task-actions flex items-center flex-wrap gap-2 mt-2 sm:mt-0">
-                            <button class="px-4 py-2 text-sm rounded-lg ${task.completed ? 'bg-yellow-500 hover:bg-yellow-600' : 'bg-green-500 hover:bg-green-600'} text-white toggle-btn transition-all">
-                                ${task.completed ? '↩️ Mark Pending' : '✅ Mark Complete'}
-                            </button>
-                            <button class="px-4 py-2 text-sm bg-red-500 hover:bg-red-600 text-white rounded-lg delete-btn transition-all">
-                                🗑️ Delete
-                            </button>
-                        </div>
-                    `;
-
-                    taskItem.querySelector('.toggle-btn').addEventListener('click', () => toggleCompleteTask(task.id));
-                    taskItem.querySelector('.delete-btn').addEventListener('click', () => deleteTask(task.id));
-
-                    taskListDiv.appendChild(taskItem);
-                });
-            }
-        };
-
-        /**
-         * Formats a date string for display.
-         */
-        const formatDate = (dateString) => {
-            const date = new Date(dateString);
-            return date.toLocaleDateString('en-US', { 
-                month: 'short', 
-                day: 'numeric', 
-                year: 'numeric' 
-            });
-        };
-
-        /**
-         * Gets the appropriate icon for a priority level.
-         */
-        const getPriorityIcon = (priority) => {
-            const icons = {
-                'urgent': '🔴',
-                'high': '🟡',
-                'medium': '🔵',
-                'low': '🟢'
-            };
-            return icons[priority] || '🔵';
-        };
-
-        // Enhanced showUIMessage function
-        const showUIMessage = (message, type) => {
-            const toastContainer = document.getElementById('toastContainer');
-            const toast = document.createElement('div');
-            
-            const icon = type === 'success' ? '✅' :
-                        type === 'error' ? '❌' : 'ℹ️';
-            
-            toast.className = `toast ${type}`;
-            toast.innerHTML = `
-                <span class="toast-icon">${icon}</span>
-                <span class="toast-message">${message}</span>
-            `;
-            
-            toastContainer.appendChild(toast);
-            
-            // Trigger animation
-            setTimeout(() => toast.classList.add('show'), 10);
-            
-            // Remove toast after delay
-            setTimeout(() => {
-                toast.classList.remove('show');
-                setTimeout(() => toast.remove(), 300);
-            }, 3000);
-        };
-
-        // Update statistics
-        const updateStats = () => {
-            document.getElementById('totalTasks').textContent = tasks.length;
-            document.getElementById('completedTasks').textContent = 
-                tasks.filter(task => task.completed).length;
-            document.getElementById('urgentTasks').textContent = 
-                tasks.filter(task => task.priority === 'urgent').length;
-        };
-
-        // Add keyboard shortcuts
-        document.addEventListener('keydown', (e) => {
-            if (e.ctrlKey && e.key === 'Enter') {
-                addTask();
-            }
-        });
-
-        // Enhance renderTasks to update statistics
-        const originalRenderTasks = renderTasks;
-        renderTasks = () => {
-            originalRenderTasks();
-            updateStats();
-        };
-
-        // --- Event Listeners ---
-        addTaskBtn.addEventListener('click', addTask);
-        filterTasksSelect.addEventListener('change', renderTasks);
-        sortTasksSelect.addEventListener('change', renderTasks);
-
-        // Allow Enter key to add task
-        [taskNameInput, taskTypeInput].forEach(input => {
-            input.addEventListener('keypress', (e) => {
-                if (e.key === 'Enter') addTask();
-            });
-        });
-
-        // Initialize with some sample tasks
-        tasks = [
-            {
-                id: 'sample1',
-                name: 'Welcome to your Task Manager!',
-                type: 'Tutorial',
-                priority: 'medium',
-                dueDate: null,
-                completed: false
-            },
-            {
-                id: 'sample2',
-                name: 'Try adding your first task above',
-                type: 'Tutorial',
-                priority: 'low',
-                dueDate: null,
-                completed: false
-            }
-        ];
-
-        // Initial render
-        renderTasks();
-    </script>
-</body>
-</html>
+                        `;
+        
+                        // Append the task to the appropriate Kanban column
+                        if (task.status === 'todo') {
+                            columnToDo.appendChild(taskItem);
+                        } else if (task.status === 'in-progress') {
+                            columnInProgress.appendChild(taskItem);
+                        } else if (task.status === 'completed') {
+                            columnCompleted.appendChild(taskItem);
+                        }
+                        tasksRenderedCount++;
+                    }); // <-- Close forEach
+        
+                    // Show "No tasks" message if nothing rendered after filtering
+                    if (tasksRenderedCount === 0) {
+                        noTasksMessage.classList.remove('hidden');
+                        noTasksMessage.textContent = 'No tasks match the current filter.';
+                    } else {
+                        noTasksMessage.classList.add('hidden');
+                    }
+                }
